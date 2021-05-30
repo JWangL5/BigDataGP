@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <title>{{keyword}} - SearchResult</title>
+	<link rel="stylesheet" href={% static 'temp.css' %}>
+    <link rel="shortcut icon" href={%static 'Logo-0.png' %} />
+    <script src="https://rawgit.com/neo4j-contrib/neovis.js/master/dist/neovis.js"></script>
+    <style type="text/css">
+
+        #viz {
+            margin: 100px;
+            align-content: center;
+            width: 80%;
+            height: 700px;
+            border: 1px solid lightgray;
+            font: 22pt arial;
+        }
+    </style>
+
+</head>
+<body onload="draw()">
+	<h2 style="text-align: center;">{{keyword}}</h2>
+    <table id="restable" border="1">
+        <tr>
+            <th width="100px">日期</th>
+            <th>标题</th>
+            <th>杂志</th>
+            <th id="sort">PR value</th>
+        </tr>
+		{% for p in prpapers %}
+        <tr>
+            <td>{{p.pubdate}}</td>
+            <td> <a href="http://dx.doi.org/{{p.doi}}"> {{p.title}} </a> </td>
+            <td>{{p.journal}}</td>
+			<td>{{p.pr}}</td>
+        </tr>
+		{% endfor %}
+    </table>
+
+
+    <hr>
+    <div style="align-content: center;">{{mywordcloud|safe}}</div>
+
+    <hr>
+    <h3>{{keyword}}关系图</h3>
+    <div id="viz"></div>
+
+</body>
+
+
+<script type="text/javascript">
+    var viz;
+    function draw() {
+        var config = {
+            container_id: "viz",
+            server_url: "bolt://localhost:7687",
+            server_user: "neo4j",
+            server_password: "JWangL5@cau",
+            labels: {
+                "Paper": {
+                    // "caption":False,
+                    "size": "pagerank",
+                    "title_properties": ["title","journal", "pubdate"],
+                    "font":{
+                        "size":0
+                    }
+                },
+                "Author": {
+                    // "caption":False,
+                    // "size": "pagerank",
+                    "title_properties": ["name"],
+                    "font":{
+                        "size":0
+                    }
+                }
+            },
+            relationships: {
+                
+                "CITE": {
+                    "thickness":"0.1",
+                },
+                "PUBLISH": {
+                    "thickness":"0.1",
+                }
+            },
+            "arrows":true,
+            // initial_cypher: "MATCH (m:{{keyword}})-[r:CITE]->(n) RETURN * limit 50"
+            initial_cypher: "MATCH (m)-[r]->(n) RETURN * limit 200"
+
+        };
+
+    viz = new NeoVis.default(config);
+    viz.render();
+    }
+</script>
+
+
+<script>
+    var sort = document.getElementById('sort');
+    var up = true
+    sort.onclick = function(){
+        var table = document.getElementsByTagName('table')[0];
+        var tr = table.getElementsByTagName('tr');
+        var array = [];
+        for (var i = 1;i < tr.length;i++) {
+            array.push(tr[i]);
+        }
+        if (up) {
+            SortUp (array);
+            up = false;
+        } else {
+            SortDown (array);
+            up = true;
+        }
+
+        for (var i = 0; i < array.length; i++){
+            table.appendChild(array[i]);
+        }
+    }
+    function SortUp(array){
+        for (var i = 0;i < array.length;i++) {
+            for (var j = i + 1;j < array.length;j++) {
+                if (array[j] === undefined) {
+                    continue;
+                }
+                if (array[i].getElementsByTagName('td')[2].innerText <= array[j].getElementsByTagName('td')[2].innerText) {
+                    var temp = array[i];
+                    array[i] = array[j];
+                    array[j] = temp;
+                }
+            }
+        }
+    }
+    function SortDown(array){
+        for (var i = 0;i < array.length;i++) {
+            for (var j = i + 1;j < array.length;j++) {
+                if (array[j] === undefined) {
+                    continue;
+                }
+                if (array[i].getElementsByTagName('td')[2].innerText >= array[j].getElementsByTagName('td')[2].innerText) {
+                    var temp = array[i];
+                    array[i] = array[j];
+                    array[j] = temp;
+                }
+            }
+        }
+    }
+</script>
+
+
+
+</html> 
+
